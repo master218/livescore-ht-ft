@@ -1,82 +1,69 @@
 export async function onRequestGet(context) {
   var url = new URL(context.request.url);
   var date = url.searchParams.get('date') || '2026-10-18';
-  
-  // Map date to flashscore.mobi d param: 0=today, -1=yesterday, 1=tomorrow
-  var today = new Date().toISOString().split('T')[0];
-  var diffDays = Math.round((new Date(date) - new Date(today)) / 86400000);
-  
   try {
-    // TRY REAL API FIRST
     var key = context.env.FOOTBALL_API_KEY;
-    var r = await fetch('https://live-football-api.com/api/v1/matches?date=' + date + '&language=en', { headers: { 'X-API-Key': key } });
+    // ADD TIMEZONE - THIS IS KEY FOR YOUR PAID API TO GIVE VARIED TIMES
+    var apiUrl = 'https://live-football-api.com/api/v1/matches?date=' + date + '&language=en&timezone=Africa/Lagos';
+    var r = await fetch(apiUrl, { headers: { 'X-API-Key': key } });
     var j = await r.json();
     var list = (j.data && j.data.matches) ? j.data.matches : [];
-    
     var out = [];
-    var hasVariedTimes = false;
-    var firstTime = null;
-    
     for (var i = 0; i < list.length; i++) {
       var m = list[i];
+      var home = (m.home && m.home.name) ? m.home.name : 'Home';
+      var away = (m.away && m.away.name) ? m.away.name : 'Away';
+      var country = (m.league && m.league.country) ? m.league.country : 'Other';
+      var leagueName = (m.league && m.league.name) ? m.league.name : 'League';
+      var timeVal = '15:00';
       var ts = 0;
-      var timeVal = '';
-      var dateStr = (m.fixture && m.fixture.date) ? m.fixture.date : (m.date || '');
+      
+      // YOUR PAID API HAS REAL TIME HERE - fixture.date = "2026-10-18T12:30:00+01:00" etc - VARIED PER LEAGUE
+      var dateStr = '';
+      if (m.fixture && m.fixture.date) dateStr = m.fixture.date;
+      else if (m.fixture && m.fixture.datetime) dateStr = m.fixture.datetime;
+      else if (m.kickoff) dateStr = m.kickoff;
       
       if (dateStr) {
         var d = new Date(dateStr);
         if (!isNaN(d.getTime())) {
-          ts = Math.floor(d.getTime() / 1000);
+          ts = d.getTime();
+          // This gives varied times: 12:30, 15:00, 17:15, 20:45 etc per league
           var lagos = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
           var p = lagos.split(':');
           var h = parseInt(p[0], 10);
           h = (h + 1) % 24; // +1 for Flashscore
           timeVal = (h < 10 ? '0' + h : '' + h) + ':' + p[1];
         }
-      }
-      if (!timeVal && m.timestamp) {
-        ts = m.timestamp;
-        var d2 = new Date(ts * 1000);
+      } else if (m.timestamp) {
+        // Fallback - but this is why you had all 15:00
+        var d2 = new Date(m.timestamp * 1000);
         var lagos2 = d2.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
         var p2 = lagos2.split(':');
         var h2 = parseInt(p2[0], 10);
         h2 = (h2 + 1) % 24;
         timeVal = (h2 < 10 ? '0' + h2 : '' + h2) + ':' + p2[1];
+        ts = d2.getTime();
       }
-      if (!timeVal) timeVal = '15:00';
-      if (firstTime === null) firstTime = timeVal;
-      if (timeVal !== firstTime) hasVariedTimes = true;
-      
-      var country = (m.league && m.league.country) ? m.league.country : 'Other';
-      var leagueName = (m.league && m.league.name) ? m.league.name : 'League';
       
       out.push({
         id: m.id || i,
         time: timeVal,
-        ts: ts || (i * 3600),
-        home: { name: (m.home && m.home.name) ? m.home.name : 'Home', score: null },
-        away: { name: (m.away && m.away.name) ? m.away.name : 'Away', score: null },
-        ht: null,
+        ts: ts,
+        home: { name: home, score: (m.home && m.home.score != null) ? m.home.score : null },
+        away: { name: away, score: (m.away && m.away.score != null) ? m.away.score : null },
+        ht: m.halftime || null,
         league: { country: country, name: leagueName },
-        status: 'scheduled',
-        isLive: false
+        status: (m.status && m.status.is_live) ? 'live' : 'scheduled',
+        isLive: !!(m.status && m.status.is_live)
       });
     }
-    
-    // IF API GIVES SAME TIME FOR ALL (YOUR BUG), USE FLASHSCORE REAL TIMES PATTERN
-    if (!hasVariedTimes && out.length > 3) {
-      // Create varied times like Flashscore - automatically per league, NO club names
-      // Flashscore pattern: 12:30, 14:00, 15:00, 15:30, 16:45, 17:15, 17:30, 18:00, 18:30, 20:00, 20:45
-      var flashPattern = ['12:30','14:00','15:00','15:00','15:00','15:00','15:30','16:45','17:15','17:15','17:15','17:30','18:00','20:00','20:00','20:45','21:00'];
-      out.sort(function(a,b){ return (a.league.country + a.league.name).localeCompare(b.league.country + b.league.name); });
-      var leagueGroups = {};
-      for (var k = 0; k < out.length; k++) {
-        var lk = out[k].league.country + '|' + out[k].league.name;
-        if (!leagueGroups[lk]) leagueGroups[lk] = [];
-        leagueGroups[lk].push(k);
-      }
-      var groupIdx = 0;
-      for (var g in leagueGroups) {
-        var indices = leagueGroups[g];
-        var baseTime = flashPattern[groupIdx % flashPattern.length];
-        // For Premier League group, make last game 17:30 like Flashscore shows Forest 17:
+    // Sort by REAL time - so 12:30 first, 20:45 last - varied like Flashscore
+    out.sort(function(a,b){ return a.ts - b.ts; });
+    return new Response(JSON.stringify({ data: { matches: out } }), {
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ data: { matches: [] } }), { headers: { 'Content-Type': 'application/json' } });
+  }
+}
