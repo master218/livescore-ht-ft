@@ -1,85 +1,97 @@
 export async function onRequestGet(context) {
   var url = new URL(context.request.url);
-  var date = url.searchParams.get('date') || '2026-10-19';
+  var date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
   var out = [];
   try {
-    // USE YOUR PAID API + REAL TIME FIX
     var key = context.env.FOOTBALL_API_KEY;
     var apiUrl = 'https://live-football-api.com/api/v1/matches?date=' + date + '&language=en';
     var r = await fetch(apiUrl, { headers: { 'X-API-Key': key } });
     var j = await r.json();
-    var list = (j.data && j.data.matches) ? j.data.matches : [];
-
-    // GET REAL VARIED TIMES FROM FREE API
-    var realMap = {};
-    try {
-      var r2 = await fetch('https://www.thesportsdb.com/api/v1/json/1/eventsday.php?d=' + date + '&s=Soccer');
-      var j2 = await r2.json();
-      var evs = j2.events || [];
-      for (var e = 0; e < evs.length; e++) {
-        var ev = evs[e];
-        var t = ev.strTime ? ev.strTime.substring(0,5) : '15:00';
-        var parts = t.split(':');
-        var hh = parseInt(parts[0], 10);
-        hh = (hh + 1) % 24;
-        t = (hh < 10 ? '0' + hh : '' + hh) + ':' + parts[1];
-        var k1 = (ev.strHomeTeam || '').toLowerCase().substring(0,5);
-        var k2 = (ev.strAwayTeam || '').toLowerCase().substring(0,5);
-        realMap[k1 + k2] = t;
-        realMap[(ev.strHomeTeam || '').toLowerCase()] = t;
-      }
-    } catch(e) {}
+    var list = (j.data && j.data.matches) ? j.data.matches : (j.data || []);
 
     for (var i = 0; i < list.length; i++) {
       var m = list[i];
-      var home = (m.home && m.home.name) ? m.home.name : 'Home';
-      var away = (m.away && m.away.name) ? m.away.name : 'Away';
-      var country = (m.league && m.league.country) ? m.league.country : 'Other';
-      var leagueName = (m.league && m.league.name) ? m.league.name : 'League';
-      
-      // FIND REAL TIME
-      var timeVal = '';
-      var h5 = home.toLowerCase().substring(0,5);
-      var a5 = away.toLowerCase().substring(0,5);
-      if (realMap[h5 + a5]) timeVal = realMap[h5 + a5];
-      else if (realMap[home.toLowerCase()]) timeVal = realMap[home.toLowerCase()];
-      
-      // If not in free API, use fixture.date which HAS varied times
-      if (!timeVal && m.fixture && m.fixture.date) {
-        var d = new Date(m.fixture.date);
+      var homeName = (m.home && m.home.name) ? m.home.name : (m.home_team || 'Home');
+      var awayName = (m.away && m.away.name) ? m.away.name : (m.away_team || 'Away');
+      var country = (m.league && m.league.country) ? m.league.country : (m.country || 'Other');
+      var leagueName = (m.league && m.league.name) ? m.league.name : (m.league_name || 'League');
+
+      // 1. GET REAL VARIED TIME from fixture.date (12:30,15:00,17:15,20:45 etc)
+      var timeVal = '15:00';
+      var ts = 0;
+      var dateStr = (m.fixture && m.fixture.date) ? m.fixture.date : (m.date || m.kickoff || '');
+      if (dateStr) {
+        var d = new Date(dateStr);
         if (!isNaN(d.getTime())) {
+          ts = d.getTime();
           var lagos = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
           var p = lagos.split(':');
           var h = parseInt(p[0], 10);
-          h = (h + 1) % 24;
+          h = (h + 1) % 24; // +1 for Flashscore
           timeVal = (h < 10 ? '0' + h : '' + h) + ':' + p[1];
         }
+      } else if (m.timestamp) {
+        var d2 = new Date(m.timestamp * 1000);
+        ts = d2.getTime();
+        var lagos2 = d2.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
+        var p2 = lagos2.split(':');
+        var h2 = parseInt(p2[0], 10);
+        h2 = (h2 + 1) % 24;
+        timeVal = (h2 < 10 ? '0' + h2 : '' + h2) + ':' + p2[1];
       }
-      if (!timeVal) {
-        // DEFAULT varied by league - Getafe is LaLiga 20:00 not 15:00
-        if (leagueName.toLowerCase().indexOf('laliga') > -1) timeVal = '20:00';
-        else if (leagueName.toLowerCase().indexOf('serie a') > -1) timeVal = '17:30';
-        else if (country.toLowerCase() === 'spain') timeVal = '20:00';
-        else timeVal = '15:00';
+
+      // 2. GET REAL SCORE - RESULTS
+      var homeScore = null;
+      var awayScore = null;
+      var ht = null;
+      var status = 'scheduled';
+      var isLive = false;
+
+      // Try all possible fields your paid API uses
+      if (m.home && m.home.score != null) homeScore = m.home.score;
+      else if (m.score && m.score.home != null) homeScore = m.score.home;
+      else if (m.home_score != null) homeScore = m.home_score;
+      else if (m.goals && m.goals.home != null) homeScore = m.goals.home;
+
+      if (m.away && m.away.score != null) awayScore = m.away.score;
+      else if (m.score && m.score.away != null) awayScore = m.score.away;
+      else if (m.away_score != null) awayScore = m.away_score;
+      else if (m.goals && m.goals.away != null) awayScore = m.goals.away;
+
+      if (m.halftime) ht = m.halftime;
+      else if (m.score && m.score.halftime) ht = m.score.halftime;
+
+      // Status
+      if (m.status) {
+        if (m.status.is_live || m.status.live) { status = 'live'; isLive = true; }
+        else if (m.status.is_finished || m.status.finished || m.status.short === 'FT' || m.status.long === 'Finished') status = 'finished';
+        else if (m.status.short) status = m.status.short.toLowerCase();
       }
+      if (m.is_live) { status = 'live'; isLive = true; }
+      if (homeScore != null && awayScore != null && !isLive) status = 'finished';
 
       out.push({
         id: m.id || i,
         time: timeVal,
-        ts: i,
-        home: { name: home, score: null },
-        away: { name: away, score: null },
-        ht: null,
+        ts: ts || i,
+        home: { name: homeName, score: homeScore },
+        away: { name: awayName, score: awayScore },
+        ht: ht,
         league: { country: country, name: leagueName },
-        status: 'scheduled',
-        isLive: false
+        status: status,
+        isLive: isLive
       });
     }
-    out.sort(function(a,b){ return a.time.localeCompare(b.time); });
+
+    // Sort by time - Yesterday results sorted by kickoff
+    out.sort(function(a,b){ return a.ts - b.ts; });
+
     return new Response(JSON.stringify({ data: { matches: out } }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
     });
-  } catch(err) {
-    return new Response(JSON.stringify({ data: { matches: [] } }), { headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    return new Response(JSON.stringify({ data: { matches: out }, error: String(e) }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
