@@ -8,31 +8,29 @@
 body{background:#080e08;color:#fff;font-family:Arial}
 header{position:sticky;top:0;z-index:100;background:#0a130a;border-bottom:2px solid #00c853;padding:8px}
 .logo{font-weight:900;color:#00e676}
-.ad{background:#101f10;border:1px dashed #2e7d32;margin:8px;padding:8px;text-align:center;color:#66bb6a;font-size:12px;border-radius:8px}
+.ad{background:#101f10;border:1px dashed #2e7d32;margin:8px;padding:10px;text-align:center;color:#00e676;border-radius:8px;display:block;text-decoration:none;font-weight:700}
+.ad:hover{background:#163016}
 .days{display:flex;gap:6px;overflow:auto;padding:8px 0}
-.day{min-width:70px;padding:8px;background:#122112;border-radius:10px;text-align:center;cursor:pointer;border:1px solid #1d331d}
+.day{min-width:72px;padding:8px 4px;background:#122112;border-radius:10px;text-align:center;cursor:pointer;border:1px solid #1d331d}
 .day.active{background:#00c853;color:#000;font-weight:800}
-.filters{display:flex;gap:6px;overflow:auto;padding:6px 0}
+.filters{display:flex;gap:6px;overflow:auto;padding:6px 0;align-items:center}
 .fbtn{padding:6px 12px;background:#162616;border-radius:20px;cursor:pointer;border:1px solid #244524;font-size:12px;white-space:nowrap}
 .fbtn.active{background:#fff;color:#000;font-weight:700}
 .leagueHead{background:#0e1e0e;padding:8px 10px;margin-top:10px;border-left:4px solid #00c853;display:flex;justify-content:space-between;font-size:13px}
 .match{display:flex;align-items:center;padding:10px 8px;background:#111f11;margin:1px 0;cursor:pointer}
 .match:hover{background:#1a2f1a}
-.timeCol{width:55px;font-size:13px;color:#a5d6a7;text-align:center}
+.timeCol{width:60px;font-size:13px;color:#a5d6a7;text-align:center}
 .teamCol{flex:1;padding-left:10px}
 .scoreCol{min-width:50px;text-align:right;font-weight:900;color:#00e676}
 #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;justify-content:center;align-items:center;padding:12px}
 #modalBox{background:#0f1f0f;border:2px solid #00c853;border-radius:14px;width:100%;max-width:400px}
-.tab{display:flex}
-.tab div{flex:1;padding:10px;text-align:center;background:#162616;cursor:pointer;font-size:13px}
-.tab div.active{background:#1e331e;border-bottom:2px solid #00c853;font-weight:700}
 .content{padding:14px}
 </style>
 </head>
 <body>
 <header>
-<div class="logo">⚽ LiveScore HT-FT</div>
-<div class="ad">AD SPACE TOP</div>
+<div class="logo">⚽ LiveScore HT-FT <span style="font-size:11px;color:#66bb6a;float:right">FAST • GREEN • BLACK</span></div>
+<a class="ad" href="https://t.me/yourchannel" target="_blank" id="adTop">AD SPACE TOP - CLICKABLE → Put your Telegram / Betting Link Here</a>
 <div class="days" id="days"></div>
 <div class="filters">
 <div class="fbtn active" data-f="all" onclick="setF('all')">All Games</div>
@@ -42,13 +40,27 @@ header{position:sticky;top:0;z-index:100;background:#0a130a;border-bottom:2px so
 <select id="sortSel" onchange="render()"><option value="top">Top 1-10</option><option value="az">A-Z</option></select>
 </div>
 </header>
-<div class="ad">AD SPACE MID</div>
+
+<a class="ad" href="https://t.me/yourchannel" target="_blank">AD SPACE MID - CLICKABLE → Your Ad Link</a>
 <div id="list"></div>
-<div class="ad">AD SPACE BOTTOM</div>
+<a class="ad" href="https://t.me/yourchannel" target="_blank">AD SPACE BOTTOM - CLICKABLE → Your Ad Link</a>
+
 <div id="modal" onclick="if(event.target==this)closeModal()"><div id="modalBox"></div></div>
 
 <script>
-const TOP = ["champions league","europa league","conference league","premier league","ligue 1","bundesliga","serie a","la liga","eredivisie","primeira liga"];
+// YOUR TOP 10 EXACT ORDER
+const TOP_ORDER = [
+ "champions league",
+ "europa league", 
+ "conference league",
+ "premier league",
+ "ligue 1",
+ "bundesliga",
+ "serie a",
+ "la liga",
+ "eredivisie",
+ "primeira liga"
+];
 let curDate=new Date().toISOString().split('T')[0], filter='all', allMatches=[];
 
 function loadDays(){
@@ -62,14 +74,31 @@ function loadDays(){
 }
 function pickDate(iso){curDate=iso; loadDays(); loadMatches();}
 function setF(f){filter=f; document.querySelectorAll('.fbtn[data-f]').forEach(b=>b.classList.remove('active')); document.querySelector(`[data-f="${f}"]`).classList.add('active'); render();}
+
 async function loadMatches(){
  document.getElementById('list').innerHTML='<div style="padding:20px;text-align:center">Loading...</div>';
- let r=await fetch(`/api/matches?date=${curDate}`); let j=await r.json();
- allMatches=j.data?.matches||[];
+ try{
+  let r=await fetch(`/api/matches?date=${curDate}`);
+  let j=await r.json();
+  allMatches=j.data?.matches||j.matches||[];
+ }catch(e){allMatches=[];}
  render();
 }
-function getTime(utc){ try{ return new Date(utc).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Lagos'}); }catch{return utc?.slice(11,16)||'--:--';} }
-function getRank(n){ n=n.toLowerCase(); for(let i=0;i<TOP.length;i++) if(n.includes(TOP[i])) return i; return 99; }
+
+// FIX INVALID DATE - CORRECT LAGOS TIME LEFT SIDE
+function getTime(utc){
+ if(!utc || utc==="Invalid Date") return "--:--";
+ try{
+  let d=new Date(utc);
+  if(isNaN(d.getTime())) return utc.slice(11,16) || "--:--";
+  return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Lagos'});
+ }catch{ return "--:--"; }
+}
+function getRank(name){
+ let lower=name.toLowerCase();
+ for(let i=0;i<TOP_ORDER.length;i++){ if(lower.includes(TOP_ORDER[i])) return i; }
+ return 99;
+}
 
 function render(){
  let sort=document.getElementById('sortSel').value;
@@ -78,39 +107,40 @@ function render(){
  let keys=Object.keys(grouped);
  if(sort==='az') keys.sort((a,b)=>a.localeCompare(b));
  else keys.sort((a,b)=> getRank(a)-getRank(b) || a.localeCompare(b));
+
  let html='';
  keys.forEach(k=>{
-  let [c,l]=k.split('::'); let ms=grouped[k];
-  html+=`<div class="leagueHead"><span>${c} - ${l} (${ms.length})</span><span style="color:#66bb6a">Standings >></span></div><div>`;
+  let [country, league]=k.split('::'); let ms=grouped[k];
+  html+=`<div class="leagueHead"><span>${country} - ${league} (${ms.length})</span><span style="color:#66bb6a;font-size:11px">Standings >></span></div><div>`;
   ms.forEach(m=>{
    let idx=allMatches.indexOf(m);
    let time=getTime(m.time);
-   // MAIN PAGE SHOW ONLY FT - NO HT HERE
-   let ftDisplay = m.status==='finished' ? `${m.home.score} - ${m.away.score}` : '-';
-   html+=`<div class="match" onclick="openMatch(${idx})"><div class="timeCol">${time}</div><div class="teamCol"><div>${m.home.name}</div><div>${m.away.name}</div></div><div class="scoreCol">${ftDisplay}</div></div>`;
+   let ftOnly = m.status==='finished' ? `${m.home.score} - ${m.away.score}` : '-';
+   html+=`<div class="match" onclick="openMatch(${idx})"><div class="timeCol">${time}</div><div class="teamCol"><div>${m.home.name}</div><div>${m.away.name}</div></div><div class="scoreCol">${ftOnly}</div></div>`;
   });
   html+=`</div>`;
  });
- document.getElementById('list').innerHTML=html||'<div style="padding:20px;text-align:center">No matches</div>';
+ document.getElementById('list').innerHTML=html||'<div style="padding:30px;text-align:center">No matches</div>';
 }
 
 function openMatch(idx){
  let m=allMatches[idx];
  let ft = m.status==='finished'? `${m.home.score} - ${m.away.score}` : 'Not started';
- let ht = (m.ht && m.ht.home!=null)? `${m.ht.home} - ${m.ht.away}` : 'No HT data';
+ let ht = (m.ht && m.ht.home!=null)? `${m.ht.home} - ${m.ht.away}` : 'No HT';
  let htft = (m.ht && m.status==='finished')? `${m.ht.home}-${m.ht.away} / ${m.home.score}-${m.away.score}` : '-';
  let time=getTime(m.time);
  document.getElementById('modalBox').innerHTML=`
-  <div class="tab"><div class="active">Results - FT & HT</div></div>
+  <div style="padding:10px;background:#162616;text-align:center;font-weight:800;border-bottom:1px solid #00c853">RESULTS - FT & HT</div>
   <div class="content">
    <h3 style="text-align:center">${m.home.name} vs ${m.away.name}</h3>
-   <p style="text-align:center;color:#81c784;font-size:12px">${m.league.country} - ${m.league.name}<br>${time} - ${m.status}</p>
-   <div style="background:#081208;padding:12px;border-radius:10px;margin-top:12px">
+   <p style="text-align:center;color:#81c784;font-size:12px;margin:5px 0">${m.league.country} - ${m.league.name}<br>${time} - ${m.status}</p>
+   <div style="background:#081208;padding:12px;border-radius:10px;margin-top:10px">
     <div style="display:flex;justify-content:space-between;padding:10px 0"><span>FT Result:</span><b style="color:#00e676;font-size:20px">${ft}</b></div>
     <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #1a331a"><span>HT Result:</span><b style="color:#ff9800;font-size:20px">${ht}</b></div>
-    <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #1a331a"><span>HT / FT:</span><b>${htft}</b></div>
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #1a331a"><span>HT/FT:</span><b>${htft}</b></div>
    </div>
-   <div style="margin-top:12px;text-align:center;color:#66bb6a;font-size:11px">Click outside to close</div>
+   <a href="https://t.me/yourchannel" target="_blank" style="display:block;margin-top:12px;background:#00c853;color:#000;padding:10px;border-radius:8px;text-align:center;font-weight:800;text-decoration:none">AD INSIDE RESULTS - CLICKABLE</a>
+   <div style="margin-top:8px;text-align:center;color:#666;font-size:11px">Tap outside to close</div>
   </div>`;
  document.getElementById('modal').style.display='flex';
 }
