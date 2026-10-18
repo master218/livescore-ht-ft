@@ -9,46 +9,51 @@ export async function onRequestGet(context) {
     const out = list.map((m, i) => {
       let isFinished = m.status && (m.status.status === 'finished' || m.status.state === 'postGame');
       let isLive = m.status && m.status.is_live;
-
-      // CORRECT FLASHSCORE TIME FOR LAGOS
-      let timeVal = '';
-      // 1. Try timestamp (most accurate)
-      if (m.timestamp) {
-        let d = new Date(m.timestamp * 1000);
+      
+      // AUTOMATIC TIME PER CLUB - try every field the API can have
+      let timeVal = null;
+      let ts = m.timestamp || m.fixture?.timestamp || m.game_start || m.startTime || null;
+      
+      if (ts) {
+        // timestamp is seconds - convert to Lagos time automatically
+        let d = new Date(ts * 1000);
         timeVal = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
-      } else if (m.fixture && m.fixture.timestamp) {
-        let d = new Date(m.fixture.timestamp * 1000);
-        timeVal = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
-      } else if (m.time && m.time.match(/^\d{2}:\d{2}/)) {
-        // API already gives time like 13:00 - treat as UTC and convert to Lagos
-        timeVal = m.time.substring(0,5);
-      } else if (m.fixture && m.fixture.date) {
+      } else if (m.time && /^\d{2}:\d{2}/.test(m.time)) {
+        timeVal = m.time.slice(0,5);
+      } else if (m.fixture?.date) {
         let d = new Date(m.fixture.date);
         if (!isNaN(d)) timeVal = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
+      } else if (m.kickoff) {
+        let d = new Date(m.kickoff);
+        if (!isNaN(d)) timeVal = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
       }
-      if (!timeVal) timeVal = m.time ? m.time.substring(0,5) : '14:00';
+      
+      if (!timeVal) timeVal = '14:00'; // fallback only if no data
 
-      let country = m.league && m.league.country ? m.league.country : 'Other';
-      let leagueName = m.league && m.league.name ? m.league.name : 'League';
+      let country = m.league?.country || 'Other';
+      let leagueName = m.league?.name || 'League';
       let low = leagueName.toLowerCase();
-      if (low.indexOf('laliga') > -1 || low.indexOf('la liga') > -1) { country = 'Spain'; leagueName = 'LaLiga'; }
+      if (low.includes('laliga') || low.includes('la liga')) { country = 'Spain'; leagueName = 'LaLiga'; }
 
-      // HT
       let ht = null;
-      if (m.halftime && m.halftime.home != null) ht = { home: m.halftime.home, away: m.halftime.away };
-      else if (m.home && m.home.halftime != null) ht = { home: m.home.halftime, away: m.away.halftime };
+      if (m.halftime?.home != null) ht = { home: m.halftime.home, away: m.halftime.away };
+      else if (m.home?.halftime != null) ht = { home: m.home.halftime, away: m.away.halftime };
 
       return {
         id: m.id || i,
         time: timeVal,
-        home: { name: m.home && m.home.name ? m.home.name : 'Home', score: m.home && m.home.score != null ? m.home.score : null },
-        away: { name: m.away && m.away.name ? m.away.name : 'Away', score: m.away && m.away.score != null ? m.away.score : null },
+        timestamp: ts || 0,
+        home: { name: m.home?.name || 'Home', score: m.home?.score ?? null },
+        away: { name: m.away?.name || 'Away', score: m.away?.score ?? null },
         ht: ht,
         league: { country: country, name: leagueName },
         status: isFinished ? 'finished' : (isLive ? 'live' : 'scheduled'),
         isLive: !!isLive
       };
     });
+    // Sort by actual kickoff time per club
+    out.sort((a,b) => (a.timestamp||0) - (b.timestamp||0) || a.time.localeCompare(b.time));
+    
     return new Response(JSON.stringify({ data: { matches: out } }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
   } catch (e) {
     return new Response(JSON.stringify({ data: { matches: [] } }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
