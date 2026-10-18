@@ -1,25 +1,6 @@
 export async function onRequestGet(context) {
   var url = new URL(context.request.url);
   var date = url.searchParams.get('date') || '2026-10-18';
-  
-  // REAL FLASHSCORE TIMES FOR 10-19 - AUTOMATIC PER CLUB
-  var REAL_TIMES = {
-    'getafe': '20:00',
-    'rayo': '20:00',
-    'monza': '17:30',
-    'cagliari': '17:30',
-    'parma': '20:45',
-    'torino': '20:45',
-    'tottenham': '20:00',
-    'coventry': '20:00',
-    'azazga': '15:00',
-    'batna': '15:00',
-    'forest': '17:30',
-    'arsenal': '17:30',
-    'bournemouth': '15:00',
-    'sunderland': '15:00'
-  };
-
   try {
     var key = context.env.FOOTBALL_API_KEY;
     var r = await fetch('https://live-football-api.com/api/v1/matches?date=' + date + '&language=en', { headers: { 'X-API-Key': key } });
@@ -28,37 +9,41 @@ export async function onRequestGet(context) {
     var out = [];
     for (var i = 0; i < list.length; i++) {
       var m = list[i];
-      var home = (m.home && m.home.name) ? m.home.name : '';
-      var away = (m.away && m.away.name) ? m.away.name : '';
-      var low = (home + ' ' + away).toLowerCase();
-      var timeVal = '15:00';
-      var ts = m.timestamp || (m.fixture && m.fixture.timestamp) || 0;
+      var ts = 0;
+      var timeVal = '';
+      
+      // GET REAL VARIED TIME - Try fixture.date first (has real time per league)
+      var dateStr = '';
+      if (m.fixture && m.fixture.date) dateStr = m.fixture.date;
+      else if (m.date) dateStr = m.date;
+      else if (m.datetime) dateStr = m.datetime;
+      else if (m.kickoff) dateStr = m.kickoff;
 
-      // 1. Try API timestamp +1 hour
-      if (ts) {
-        var d = new Date(ts * 1000);
-        var lagos = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
-        var p = lagos.split(':');
-        var h = parseInt(p[0], 10);
-        h = (h + 1) % 24;
-        timeVal = (h < 10 ? '0' + h : '' + h) + ':' + p[1];
-      }
-
-      // 2. OVERRIDE WITH REAL FLASHSCORE TIME PER CLUB
-      for (var k in REAL_TIMES) {
-        if (low.indexOf(k) > -1) {
-          timeVal = REAL_TIMES[k];
-          break;
+      if (dateStr) {
+        var d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          ts = Math.floor(d.getTime() / 1000);
+          // Lagos time
+          var lagos = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
+          var p = lagos.split(':');
+          var h = parseInt(p[0], 10);
+          h = (h + 1) % 24; // PLUS 1 HOUR FOR FLASHSCORE
+          timeVal = (h < 10 ? '0' + h : '' + h) + ':' + p[1];
         }
       }
-
-      // 3. For 10-19, make times varied automatically
-      if (date === '2026-10-19') {
-        if (low.indexOf('monza') > -1 || low.indexOf('cagliari') > -1) timeVal = '17:30';
-        else if (low.indexOf('getafe') > -1 || low.indexOf('rayo') > -1) timeVal = '20:00';
-        else if (low.indexOf('tottenham') > -1 || low.indexOf('coventry') > -1) timeVal = '20:00';
-        else if (low.indexOf('parma') > -1 || low.indexOf('torino') > -1) timeVal = '20:45';
+      
+      // Fallback to timestamp if no fixture.date
+      if (!timeVal && m.timestamp) {
+        ts = m.timestamp;
+        var d2 = new Date(ts * 1000);
+        var lagos2 = d2.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos' });
+        var p2 = lagos2.split(':');
+        var h2 = parseInt(p2[0], 10);
+        h2 = (h2 + 1) % 24;
+        timeVal = (h2 < 10 ? '0' + h2 : '' + h2) + ':' + p2[1];
       }
+
+      if (!timeVal) timeVal = '15:00';
 
       var country = (m.league && m.league.country) ? m.league.country : 'Other';
       var leagueName = (m.league && m.league.name) ? m.league.name : 'League';
@@ -66,16 +51,18 @@ export async function onRequestGet(context) {
       out.push({
         id: m.id || i,
         time: timeVal,
-        ts: ts + i*3600,
-        home: { name: home || 'Home', score: null },
-        away: { name: away || 'Away', score: null },
+        ts: ts,
+        home: { name: (m.home && m.home.name) ? m.home.name : 'Home', score: null },
+        away: { name: (m.away && m.away.name) ? m.away.name : 'Away', score: null },
         ht: null,
         league: { country: country, name: leagueName },
         status: 'scheduled',
         isLive: false
       });
     }
-    out.sort(function(a,b){ return a.time.localeCompare(b.time); });
+    // Sort by real time - this makes every club time varied automatically
+    out.sort(function(a,b){ return a.ts - b.ts; });
+    
     return new Response(JSON.stringify({ data: { matches: out } }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
     });
