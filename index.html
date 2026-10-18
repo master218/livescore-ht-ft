@@ -1,147 +1,103 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Livescore Ultimate HT FT</title><style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#0b0e14;color:#fff;font-family:Arial;-webkit-tap-highlight-color:transparent}
-.top{padding:12px 14px;background:#0f131d;border-bottom:1px solid #1c2132;position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center}
-.top b{font-size:14px;font-weight:900}.live-badge{color:#ff3b30;font-size:11px;font-weight:900}.refresh{color:#00e676;font-size:12px;font-weight:900;cursor:pointer;background:#1a1f2f;border:1px solid #00e676;border-radius:20px;padding:7px 14px}
-.days{display:flex;gap:6px;padding:10px 12px;background:#0b0e14;overflow-x:auto;position:sticky;top:48px;z-index:90;border-bottom:1px solid #1c2132;scroll-behavior:smooth}.days::-webkit-scrollbar{display:none}
-.d{padding:8px 13px;border-radius:20px;background:#1a1f2f;color:#8a8fa3;border:1px solid #242b40;font-weight:800;font-size:11px;white-space:nowrap;cursor:pointer;flex-shrink:0;text-align:center}
-.d small{display:block;font-size:8px;opacity:.6}.d.active{background:#00e676;color:#000;border-color:#00e676}
-.filters{display:flex;gap:6px;padding:10px 12px;background:#0b0e14;overflow-x:auto}.filters::-webkit-scrollbar{display:none}
-.f{padding:7px 13px;border-radius:20px;background:#1a1f2f;color:#8a8fa3;border:1px solid #242b40;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer}
-.f.active{background:#fff;color:#000}
-.search{margin:10px 12px;background:#151a27;border:1px solid #242b40;border-radius:10px;display:flex;align-items:center;padding:10px 12px;gap:8px}
-.search input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:13px}
-.ad-wrap{margin:10px 12px;background:#111827;border:1px solid #1f2937;border-radius:10px;padding:8px}
-.ad-btn{display:block;background:linear-gradient(90deg,#00e676,#00c853);color:#000;text-align:center;padding:11px;border-radius:8px;font-weight:900;text-decoration:none;font-size:12px}
-.count{margin:0 12px 6px;color:#5a6075;font-size:10px;font-weight:700}
-.league{background:#1a1f2f;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #242b40;cursor:pointer;position:sticky;top:95px;z-index:10}
-.league-left{color:#00e676;font-size:10.5px;font-weight:900}.league-right{color:#00e676;font-size:10px;font-weight:900;border:1px solid #00e676;border-radius:10px;padding:2px 8px}
-.match{display:flex;align-items:center;padding:11px 12px;background:#0f131d;border-bottom:1px solid #1c2132;cursor:pointer}
-.match:active{background:#1c2132}.time{width:50px;font-size:11px;color:#8a8fa3;font-weight:700;flex-shrink:0}.time.live{color:#ff3b30;font-weight:900}.time.ft{color:#fff;font-weight:900}.time.ht{color:#ff9800;font-weight:900}
-.teams{flex:1;min-width:0}.team{font-size:12.5px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d0d4e0}
-.score{width:55px;text-align:right;font-weight:900;font-size:12.5px}.score.live{color:#00e676}.score.ft{color:#fff}.score.ht{color:#ff9800}
-.loading{padding:40px;text-align:center;color:#5a6075;font-size:12px}
-.skeleton{height:46px;background:linear-gradient(90deg,#151a27 25%,#1a1f2f 50%,#151a27 75%);background-size:200% 100%;animation:s 1s infinite;margin-bottom:1px}@keyframes s{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:999;display:none;overflow-y:auto}
-.modal.open{display:block}.modal-box{background:#0f131d;min-height:100vh;padding:0}
-.modal-top{padding:12px 14px;background:#0f131d;border-bottom:1px solid #1c2132;position:sticky;top:0;display:flex;justify-content:space-between;align-items:center}
-.modal-top b{color:#00e676;font-size:13px}.close{color:#fff;background:#1a1f2f;border:1px solid #242b40;border-radius:20px;padding:6px 14px;font-weight:900;cursor:pointer}
-</style></head><body>
-<div class="top"><b id="dateHead">France</b><div style="display:flex;gap:8px;align-items:center"><span id="liveCount" class="live-badge"></span><span class="refresh" onclick="loadMatches(currentDate,true)">↻ Refresh</span></div></div>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiveScore HT FT</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#fff;font-family:Arial;padding:10px}
+header{position:sticky;top:0;z-index:10;background:#0f172a;padding:10px 0;border-bottom:1px solid #1e293b}
+h1{font-size:18px}
+.days{display:flex;gap:8px;overflow:auto;padding:8px 0}
+.day{padding:6px 12px;background:#1e293b;border-radius:20px;white-space:nowrap;cursor:pointer}
+.day.active{background:#22c55e;color:#000}
+.filters{display:flex;gap:8px;padding:8px 0}
+.fbtn{padding:6px 12px;background:#1e293b;border-radius:20px;cursor:pointer}
+.fbtn.active{background:#fff;color:#000}
+.match{background:#1e293b;margin:6px 0;padding:10px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.team{flex:1}
+.score{font-weight:bold;color:#22c55e}
+.country{font-size:12px;color:#94a3b8}
+#modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:99;justify-content:center;align-items:center}
+#modalBox{background:#1e293b;padding:20px;border-radius:15px;width:90%;max-width:350px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+<h1>LiveScore - HT FT Results</h1>
 <div class="days" id="days"></div>
-<div class="filters"><button class="f active" data-f="all" onclick="setF('all')">All games</button><button class="f" data-f="live" onclick="setF('live')">Live</button><button class="f" data-f="finished" onclick="setF('finished')">Finished</button><button class="f" data-f="scheduled" onclick="setF('scheduled')">Scheduled</button></div>
-<div class="search"><span>🔍</span><input id="q" placeholder="Search country, league, club..." oninput="render()"></div>
-<div class="ad-wrap"><a class="ad-btn" href="https://www.bet9ja.com" target="_blank">BET NOW 300% BONUS → Tap to claim</a><div style="text-align:center;color:#5a6075;font-size:9px;margin-top:5px">Ad - Replace with your affiliate link to earn</div></div>
-<div class="count" id="count"></div>
+<div class="filters">
+<div class="fbtn active" data-f="all" onclick="setFilter('all')">All games</div>
+<div class="fbtn" data-f="finished" onclick="setFilter('finished')">Finished</div>
+<div class="fbtn" data-f="live" onclick="setFilter('live')">Live</div>
+</div>
+</header>
 <div id="list"></div>
-<div id="modal" class="modal" onclick="if(event.target==this)closeModal()"><div class="modal-box"><div class="modal-top"><b id="modalTitle">Details</b><span class="close" onclick="closeModal()">✕ Close</span></div><div id="modalBody"></div></div></div>
+
+<div id="modal" onclick="closeModal()"><div id="modalBox"></div></div>
+
 <script>
-function getFranceDate(off=0){const now=new Date();const fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'});let d=new Date(fmt.format(now)+'T12:00:00');d.setDate(d.getDate()+off);return d.toISOString().split('T')[0];}
-let currentDate=getFranceDate(0),allMatches=[],currentFilter='all';
-function buildDays(){const el=document.getElementById('days');let h='';for(let i=-4;i<=4;i++){let iso=getFranceDate(i);let dt=new Date(iso+'T12:00:00');let label=i===-1?'Yesterday':i===0?'Today':i===1?'Tomorrow':dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});let sub=iso.slice(5).replace('-','/');h+=`<button class="d ${iso===currentDate?'active':''}" onclick="pick('${iso}')">${label}<small>${sub}</small></button>`;}el.innerHTML=h;document.getElementById('dateHead').innerText='France '+currentDate;}
-function pick(iso){currentDate=iso;buildDays();loadMatches(iso,true);}function setF(f){currentFilter=f;document.querySelectorAll('.f').forEach(b=>b.classList.toggle('active',b.dataset.f===f));render();}
-function toFranceTime(t){if(!t) return '--:--';let s=t;if(s.includes('T')) s=s.split('T')[1];s=s.substring(0,5);if(!s.includes(':')) return s;let p=s.split(':');let hh=parseInt(p[0],10);let mm=p[1];if(isNaN(hh)) return s;hh=(hh+2)%24;return `${String(hh).padStart(2,'0')}:${mm}`;}
+let curDate = new Date(Date.now()-86400000).toISOString().split('T')[0];
+let filter = 'all';
+let allMatches=[];
 
-function getScore(m){
-  const st=m.status||{};let disp=(st.display||st.short||st.liveTime||'').toString().trim();let elapsed=st.elapsed||m.elapsed||0;
-  let raw=(st.status||'').toLowerCase();
-  const isHT=disp.toUpperCase()==='HT' || raw.includes('halftime') || raw==='ht';
-  const isFT=raw==='finished' || disp==='FT' || disp.toUpperCase()==='FT';
-  const isLive=!isFT && !isHT && (st.is_live===true || /^\d+'$/.test(disp) || /^\d+ \+\d+'$/.test(disp) || elapsed>0);
-  let hs=m.home?.score,as=m.away?.score;let valid=hs!==null&&hs!==undefined&&String(hs)!==''&&String(hs).toLowerCase()!=='null';
-  if(isHT) return {txt:valid?`${hs} - ${as}`:'-',time:'HT',live:false,fin:false,ht:true,sched:false,elapsed:45,statusText:'Half Time',fullStatus:'HT'};
-  if(isFT) return {txt:valid?`${hs} - ${as}`:'-',time:'FT',live:false,fin:true,ht:false,sched:false,elapsed:9999,statusText:'Full Time',fullStatus:'FT'};
-  if(isLive){let minute=disp;if(elapsed) minute=elapsed+"'";if(!minute.includes("'") && /^\d+$/.test(minute)) minute=minute+"'";if(!minute||minute.toLowerCase().includes('live')) minute=(elapsed||'LIVE')+(elapsed?"'":'');return {txt:valid?`${hs} - ${as}`:'-',time:minute,live:true,fin:false,ht:false,sched:false,elapsed:elapsed||parseInt(minute)||0,statusText:'LIVE '+minute,fullStatus:minute};}
-  return {txt:'-',time:toFranceTime(m.kickoff||m.time||''),live:false,fin:false,ht:false,sched:true,elapsed:0,statusText:'Scheduled',fullStatus:toFranceTime(m.kickoff||m.time||'')};
+function loadDays(){
+ let d=document.getElementById('days'); d.innerHTML='';
+ for(let i=-2;i<=2;i++){
+  let dt=new Date(); dt.setDate(dt.getDate()+i);
+  let iso=dt.toISOString().split('T')[0];
+  let label=i===-1?'Yesterday':i===0?'Today':i===1?'Tomorrow':iso.slice(5);
+  let active = iso===curDate?'active':'';
+  d.innerHTML+=`<div class="day ${active}" onclick="pickDate('${iso}')">${label}<br><small>${iso}</small></div>`;
+ }
 }
-function getHT(m){
-  // Try every possible field for HT - this makes HT show!
-  let h=m.home?.ht_score||m.home?.halftime||m.home?.ht||m.home?.score_ht||'';
-  let a=m.away?.ht_score||m.away?.halftime||m.away?.ht||m.away?.score_ht||'';
-  try{
-    if(m.score){
-      if(m.score.halftime){
-        if(typeof m.score.halftime==='string' && m.score.halftime.includes('-')){let p=m.score.halftime.split('-');h=p[0].trim();a=p[1].trim();}
-        else {h=m.score.halftime.home||m.score.halftime.Home||h; a=m.score.halftime.away||m.score.halftime.Away||a;}
-      }
-      if(m.score.ht){h=m.score.ht.home||h; a=m.score.ht.away||a;}
-    }
-    if(m.halftime && typeof m.halftime==='string' && m.halftime.includes('-')){let p=m.halftime.split('-');h=p[0].trim();a=p[1].trim();}
-    if(m.ht){h=m.ht.home||m.ht.Home||h; a=m.ht.away||m.ht.Away||a;}
-    if(m.home?.scores?.ht || m.home?.score?.halftime){h=m.home.scores.ht||m.home.score.halftime||h;}
-  }catch(e){}
-  let has=String(h)!=='' && String(h)!=='-' && String(h).toLowerCase()!=='null' && String(h).toLowerCase()!=='undefined';
-  return {home:has?h:'-',away:has?a:'-',has};
-}
-function getLeague(m){const L=m.League||m.league||{};let c=(L.country||'World').trim()||'World';let n=(L.name||'League').trim()||'League';let key=`${c.toUpperCase()}: ${n.toUpperCase()}`;if(key.includes('CAF')) return null;if(key.includes('U19')||key.includes('U20')) return null;return {country:c,name:n,key};}
-function getPriority(key){const k=key.toUpperCase();if(k.includes('CHAMPIONS LEAGUE')&&k.includes('EUROPE')) return 1;if(k.includes('EUROPA LEAGUE')&&!k.includes('CONFERENCE')) return 2;if(k.includes('CONFERENCE LEAGUE')) return 3;if(k==='ENGLAND: PREMIER LEAGUE') return 4;if(k==='FRANCE: LIGUE 1') return 5;if(k==='GERMANY: BUNDESLIGA') return 6;if(k==='ITALY: SERIE A') return 7;if(k.includes('LALIGA')||k.includes('LA LIGA')) return 8;if(k.includes('EREDIVISIE')) return 9;if(k.includes('PORTUGAL')&&k.includes('LIGA')) return 10;return 100;}
+function pickDate(iso){curDate=iso; loadDays(); loadMatches();}
+function setFilter(f){filter=f; document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active')); document.querySelector(`[data-f="${f}"]`).classList.add('active'); render();}
 
-async function loadMatches(date,force){
-  const cacheKey='ls_'+date;const listEl=document.getElementById('list');
-  listEl.innerHTML='<div class="skeleton"></div><div class="skeleton"></div>';
-  if(!force){try{let cached=localStorage.getItem(cacheKey);if(cached){let p=JSON.parse(cached);if(p&&Date.now()-p.time<120000){allMatches=p.data||[];render();}}}catch(e){}}
-  try{let r=await fetch(`/api/matches?date=${date}`,{cache:'no-store'});let d=await r.json();allMatches=d.data?.matches||d.matches||d.data||[];if(!Array.isArray(allMatches)) allMatches=[];try{localStorage.setItem(cacheKey,JSON.stringify({time:Date.now(),data:allMatches}));}catch(e){}render();}catch(e){if(!allMatches.length) listEl.innerHTML=`<div class="loading">Error<br><button onclick="loadMatches(currentDate,true)" style="background:#00e676;color:#000;border:none;padding:8px 18px;border-radius:20px;font-weight:900">Retry ↻</button></div>`;}
+async function loadMatches(){
+ document.getElementById('list').innerHTML='Loading...';
+ let r=await fetch(`/api/matches?date=${curDate}`);
+ let j=await r.json();
+ allMatches=j.data?.matches||[];
+ render();
 }
 
-function openLeague(country,name){
-  document.getElementById('modal').classList.add('open');
-  document.getElementById('modalTitle').innerText=country.toUpperCase()+': '+name.toUpperCase()+' - Standing';
-  document.getElementById('modalBody').innerHTML=`<div style="padding:12px"><div class="ad-wrap"><a class="ad-btn" href="https://www.bet9ja.com" target="_blank">BET ON ${name.toUpperCase()} NOW →</a></div></div><div class="loading">Standing clickable ✅ - Add /api/standings to show real table</div>`;
-}
-
-function openMatch(m){
-  let gs=getScore(m);let ht=getHT(m);
-  document.getElementById('modal').classList.add('open');
-  document.getElementById('modalTitle').innerText=(m.home?.name||'Home')+' vs '+(m.away?.name||'Away');
-  let statusColor=gs.live?'#ff3b30':gs.fin?'#fff':gs.ht?'#ff9800':'#8a8fa3';
-  let statusLabel=gs.ht?'HALF TIME - HT':gs.fin?'FULL TIME - FT':gs.live?'LIVE '+gs.time:'Scheduled '+gs.time;
-  document.getElementById('modalBody').innerHTML=`
-  <div style="background:#1a1f2f;padding:16px;text-align:center;border-bottom:1px solid #242b40">
-    <div style="font-size:11px;color:#8a8fa3">${getLeague(m)?.country||''} : ${getLeague(m)?.name||''} • ${currentDate} • ${gs.fullStatus}</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
-      <div style="flex:1;text-align:center;font-weight:900">${m.home?.name||'Home'}</div>
-      <div style="background:#0b0e14;border:2px solid ${statusColor};border-radius:12px;padding:8px 16px;font-weight:900;color:${gs.live?'#00e676':'#fff'};min-width:70px">${gs.txt}</div>
-      <div style="flex:1;text-align:center;font-weight:900">${m.away?.name||'Away'}</div>
-    </div>
-    <div style="margin-top:12px;color:${statusColor};font-weight:900;font-size:12px">${statusLabel}</div>
-  </div>
-  <div style="padding:12px"><div class="ad-wrap"><a class="ad-btn" href="https://www.bet9ja.com" target="_blank">BET ON THIS MATCH → 300% BONUS</a></div></div>
-  <div style="padding:0 12px">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div style="background:#151a27;border:1px solid ${gs.fin?'#00e676':'#242b40'};border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:10px;color:#8a8fa3">FULL TIME - FT</div>
-        <div style="font-weight:900;margin-top:6px;font-size:20px">${gs.txt}</div>
-        <div style="font-size:10px;color:${gs.fin?'#00e676':'#5a6075'};margin-top:4px">${gs.fin?'FT - Finished':'Not FT'}</div>
-      </div>
-      <div style="background:#151a27;border:1px solid ${ht.has?'#ff9800':gs.ht?'#ff9800':'#242b40'};border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:10px;color:#8a8fa3">HALF TIME - HT</div>
-        <div style="font-weight:900;margin-top:6px;font-size:20px;color:${ht.has?'#ff9800':'#5a6075'}">${ht.has?`${ht.home} - ${ht.away}`:'-'}</div>
-        <div style="font-size:10px;color:${ht.has||gs.ht?'#ff9800':'#5a6075'};margin-top:4px">${ht.has?'HT Available':gs.ht?'Now at HT':'No HT in API'}</div>
-      </div>
-    </div>
-    <div style="background:#151a27;border:1px solid #242b40;border-radius:10px;padding:12px;font-size:12px;line-height:24px;color:#d0d4e0">
-      Country: <b>${getLeague(m)?.country||'-'}</b><br>
-      League: <b>${getLeague(m)?.name||'-'}</b><br>
-      FT Result: <b>${gs.txt}</b><br>
-      HT Result: <b style="color:${ht.has?'#ff9800':'#5a6075'}">${ht.has?`${ht.home} - ${ht.away}`:'Not provided by API'}</b><br>
-      Status: <b style="color:${statusColor}">${statusLabel}</b><br>
-      Date: <b>${currentDate}</b>
-      ${!ht.has?`<br><br><span style="color:#ff9800;font-size:11px">⚠️ Your API no return HT. To make HT show, add halftime to your /api/matches backend. Code already ready to show HT once API send am.</span>`:''}
-    </div>
-  </div>`;
-}
-function closeModal(){document.getElementById('modal').classList.remove('open');}
 function render(){
-  let q=document.getElementById('q').value.toLowerCase();
-  let filt=allMatches.filter(m=>{let L=getLeague(m);if(!L) return false;let gs=getScore(m);if(currentFilter==='live'&&!gs.live&&!gs.ht) return false;if(currentFilter==='finished'&&!gs.fin) return false;if(currentFilter==='scheduled'&&!gs.sched) return false;if(q){let txt=`${L.country} ${L.name} ${m.home?.name||''} ${m.away?.name||''}`.toLowerCase();if(!txt.includes(q)) return false;}return true;});
-  let groups={};filt.forEach(m=>{let L=getLeague(m);if(!L) return;if(!groups[L.key]) groups[L.key]={country:L.country,name:L.name,key:L.key,p:getPriority(L.key),matches:[]};groups[L.key].matches.push(m);});
-  let sorted=Object.values(groups).sort((a,b)=>{if(a.p!==b.p) return a.p-b.p;if(a.country.toUpperCase()!==b.country.toUpperCase()) return a.country.toUpperCase().localeCompare(b.country.toUpperCase());return a.name.toUpperCase().localeCompare(b.name.toUpperCase());});
-  sorted.forEach(g=>{g.matches.sort((x,y)=>{let gx=getScore(x),gy=getScore(y);if(gx.fin&&!gy.fin) return -1;if(!gx.fin&&gy.fin) return 1;if(gx.live&&!gy.live) return -1;if(!gx.live&&gy.live) return 1;if(gx.ht&&!gy.ht) return -1;if(!gx.ht&&gy.ht) return 1;if(gx.live&&gy.live) return (gy.elapsed||0)-(gx.elapsed||0);return gx.time.localeCompare(gy.time);});});
-  let liveNum=filt.filter(m=>{let gs=getScore(m);return gs.live||gs.ht;}).length;
-  document.getElementById('liveCount').innerText=liveNum?`${liveNum} LIVE`:'';
-  document.getElementById('count').innerText=`${filt.length} matches • ${sorted.length} leagues • ${currentDate} • FT on top • Fast • No auto-refresh`;
-  let list=document.getElementById('list');
-  if(!filt.length){list.innerHTML=`<div class="loading">No matches</div>`;return;}
-  let html='';for(let g of sorted){html+=`<div class="league" onclick="openLeague('${g.country.replace(/'/g,"")}','${g.name.replace(/'/g,"")}')"><div class="league-left">🟢 ${g.country.toUpperCase()}: ${g.name.toUpperCase()}</div><div class="league-right">Standing ›</div></div>`;for(let m of g.matches){let gs=getScore(m);let safe=JSON.stringify(m).replace(/'/g,"&#39;");let tClass=gs.live?'live':gs.fin?'ft':gs.ht?'ht':'';html+=`<div class="match" onclick='openMatch(${safe})'><div class="time ${tClass}">${gs.time}</div><div class="teams"><div class="team">${m.home?.name||'Home'}</div><div class="team">${m.away?.name||'Away'}</div></div><div class="score ${tClass}">${gs.txt}</div></div>`;}}list.innerHTML=html;
+ let list=document.getElementById('list');
+ let filtered=allMatches.filter(m=>{
+  if(filter==='finished') return m.status==='finished';
+  if(filter==='live') return m.isLive;
+  return true;
+ });
+ if(!filtered.length){list.innerHTML='No matches'; return;}
+ list.innerHTML=filtered.map((m,i)=>{
+  let idx=allMatches.indexOf(m);
+  return `<div class="match" onclick="openMatch(${idx})">
+   <div class="team"><div class="country">${m.league.country} - ${m.league.name}</div><div>${m.home.name} vs ${m.away.name}</div></div>
+   <div class="score">${m.home.score} - ${m.away.score}</div>
+  </div>`;
+ }).join('');
 }
-buildDays();loadMatches(currentDate,false);
-</script></body></html>
+
+function openMatch(idx){
+ let m=allMatches[idx];
+ let ft = `${m.home.score} - ${m.away.score}`;
+ let ht = (m.ht && m.ht.home!=null) ? `${m.ht.home} - ${m.ht.away}` : null;
+ 
+ document.getElementById('modalBox').innerHTML=`
+  <h3 style="margin-bottom:10px">${m.home.name} vs ${m.away.name}</h3>
+  <div style="color:#94a3b8;margin-bottom:15px">${m.league.country} - ${m.league.name}<br>${m.status}</div>
+  <div style="background:#0f172a;padding:15px;border-radius:10px">
+   <div style="color:#22c55e;font-size:22px;font-weight:bold;margin-bottom:10px">FT: ${ft}</div>
+   ${ht ? `<div style="color:orange;font-size:20px;font-weight:bold">HT: ${ht}</div>` : `<div style="color:#64748b">HT: No HT data for this league</div>`}
+  </div>
+  <div style="margin-top:15px;color:#94a3b8;font-size:12px">Click outside to close</div>
+ `;
+ document.getElementById('modal').style.display='flex';
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+
+loadDays(); loadMatches();
+</script>
+</body>
+</html>
