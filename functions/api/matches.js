@@ -8,10 +8,18 @@ let list=j.data?.matches||[];
 let out=list.map((m,i)=>{
 let isFinished=m.status?.status==="finished"||m.status?.state==="postGame"||m.status?.status==="FT";
 let isLive=m.status?.is_live||false;
-let timeVal=m.time||m.kickoff||m.kickoff_time||m.start_time||"";
+let timeVal=m.time||"";
 if(typeof timeVal==="string"&&timeVal.includes("T")){
  let mm=timeVal.match(/(\d{2}:\d{2})/);
  if(mm) timeVal=mm[1];
+}
+// ADD 2 HOURS TO MATCH FLASHSCORE.MOBI
+if(timeVal && timeVal.includes(":")){
+ let parts=timeVal.split(":");
+ let h=parseInt(parts[0])||0;
+ let mm=parts[1]||"00";
+ h=(h+2)%24; // +2 hours
+ timeVal=`${String(h).padStart(2,'0')}:${mm}`;
 }
 let country=m.league?.country||"Other";
 let leagueName=m.league?.name||"League";
@@ -29,7 +37,7 @@ if(country==="World"){
 }
 return{
 id:m.id||i,
-time: timeVal || m.time || "15:00",
+time:timeVal,
 home:{name:m.home?.name||"Home",score:m.home?.score??null},
 away:{name:m.away?.name||"Away",score:m.away?.score??null},
 ht:(m.halftime&&m.halftime.home!=null)?{home:m.halftime.home,away:m.halftime.away}:null,
@@ -38,8 +46,8 @@ status:isFinished?"finished":(isLive?"live":"scheduled"),
 isLive:isLive
 };
 });
-return new Response(JSON.stringify({data:{matches:out}}),{headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}});
+return new Response(JSON.stringify({data:{matches:out}}),[STRIPPED]
 }catch(e){
-return new Response(JSON.stringify({data:{matches:[]},error:e.message}),{headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}});
+return new Response(JSON.stringify({data:{matches:[]},[STRIPPED]
 }
 }
