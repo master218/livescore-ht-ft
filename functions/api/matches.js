@@ -1,6 +1,6 @@
 export async function onRequestGet(context) {
   var url = new URL(context.request.url);
-  var date = url.searchParams.get('date') || '2026-10-18';
+  var date = url.searchParams.get('date') || '2026-10-17';
   try {
     var key = context.env.FOOTBALL_API_KEY;
     var r = await fetch('https://live-football-api.com/api/v1/matches?date=' + date + '&language=en', {
@@ -17,49 +17,65 @@ export async function onRequestGet(context) {
       var country = (m.league && m.league.country) ? m.league.country : (m.country || 'Other');
       var leagueName = (m.league && m.league.name) ? m.league.name : (m.league_name || 'League');
 
-      // GET TIME - PURE AUTO +1 HOUR, NO SKIP
-      var timeVal = '';
-      var ts = Date.now() + i * 60000;
+      // CORRECT TIME - Africa/Lagos like Flashscore
+      var timeVal = '00:00';
+      var ts = 0;
       var d = null;
-
       if (m.fixture && m.fixture.timestamp) d = new Date(m.fixture.timestamp * 1000);
       else if (m.fixture && m.fixture.date) d = new Date(m.fixture.date);
       else if (m.timestamp) d = new Date(m.timestamp * 1000);
-      else if (m.date) d = new Date(m.date);
-
       if (d && !isNaN(d.getTime())) {
-        var dPlus1 = new Date(d.getTime() + 3600000); // PLUS 1 HOUR
-        ts = dPlus1.getTime();
-        timeVal = dPlus1.toLocaleTimeString('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-          timeZone: 'Africa/Lagos'
+        ts = d.getTime();
+        timeVal = d.toLocaleTimeString('en-GB', {
+          hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Lagos'
         });
-      } else {
-        // Fallback auto varied by index - not all 15:00
-        var baseHour = 15 + (i % 6); // 15,16,17,18,19,20 auto varied
-        var mins = (i % 2 === 0) ? '00' : '30';
-        if (baseHour === 15 && i > 2) baseHour = 17;
-        timeVal = (baseHour < 10 ? '0' + baseHour : '' + baseHour) + ':' + mins;
-        ts = ts + i * 3600000;
       }
 
-      var hs = null, as = null;
-      if (m.home && m.home.score != null) hs = m.home.score;
-      if (m.away && m.away.score != null) as = m.away.score;
-      if (m.goals && m.goals.home != null) hs = m.goals.home;
-      if (m.goals && m.goals.away != null) as = m.goals.away;
+      // FT SCORE - for main page
+      var ft_home = null, ft_away = null;
+      if (m.home && m.home.score != null) ft_home = m.home.score;
+      else if (m.score && m.score.fulltime && m.score.fulltime.home != null) ft_home = m.score.fulltime.home;
+      else if (m.goals && m.goals.home != null) ft_home = m.goals.home;
+      else if (m.score && m.score.home != null) ft_home = m.score.home;
+
+      if (m.away && m.away.score != null) ft_away = m.away.score;
+      else if (m.score && m.score.fulltime && m.score.fulltime.away != null) ft_away = m.score.fulltime.away;
+      else if (m.goals && m.goals.away != null) ft_away = m.goals.away;
+      else if (m.score && m.score.away != null) ft_away = m.score.away;
+
+      // HT SCORE - for detail page HT-FT
+      var ht_home = null, ht_away = null, ht_str = null;
+      if (m.score && m.score.halftime) {
+        ht_home = m.score.halftime.home;
+        ht_away = m.score.halftime.away;
+        ht_str = ht_home + '-' + ht_away;
+      } else if (m.halftime && typeof m.halftime === 'object') {
+        ht_home = m.halftime.home;
+        ht_away = m.halftime.away;
+        ht_str = ht_home + '-' + ht_away;
+      } else if (m.goals && m.goals.halftime) {
+        ht_home = m.goals.halftime.home;
+        ht_away = m.goals.halftime.away;
+        ht_str = ht_home + '-' + ht_away;
+      }
 
       out.push({
         id: m.id || i,
         time: timeVal,
-        ts: ts,
-        home: { name: home, score: hs },
-        away: { name: away, score: as },
-        ht: null,
+        ts: ts || i,
+        // FT for main
+        home: { name: home, score: ft_home },
+        away: { name: away, score: ft_away },
+        // HT-FT for detail
+        ht: ht_str,
+        ht_home: ht_home,
+        ht_away: ht_away,
+        ft_home: ft_home,
+        ft_away: ft_away,
+        ft: (ft_home != null) ? ft_home + '-' + ft_away : null,
+        ht_ft: (ht_str && ft_home != null) ? 'HT ' + ht_str + ' FT ' + ft_home + '-' + ft_away : null,
         league: { country: country, name: leagueName },
-        status: hs != null ? 'finished' : 'scheduled',
+        status: ft_home != null ? 'finished' : 'scheduled',
         isLive: false
       });
     }
@@ -70,7 +86,7 @@ export async function onRequestGet(context) {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
     });
   } catch (e) {
-    return new Response(JSON.stringify({ data: { matches: [] }, error: String(e) }), {
+    return new Response(JSON.stringify({ data: { matches: [] } }), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
