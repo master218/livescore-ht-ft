@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LiveScore HT FT</title>
+<title>LiveScore - HT FT Results</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f172a;color:#fff;font-family:Arial;padding:10px}
@@ -33,14 +33,11 @@ h1{font-size:18px}
 </div>
 </header>
 <div id="list"></div>
-
 <div id="modal" onclick="closeModal()"><div id="modalBox"></div></div>
-
 <script>
 let curDate = new Date(Date.now()-86400000).toISOString().split('T')[0];
 let filter = 'all';
 let allMatches=[];
-
 function loadDays(){
  let d=document.getElementById('days'); d.innerHTML='';
  for(let i=-2;i<=2;i++){
@@ -53,7 +50,6 @@ function loadDays(){
 }
 function pickDate(iso){curDate=iso; loadDays(); loadMatches();}
 function setFilter(f){filter=f; document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active')); document.querySelector(`[data-f="${f}"]`).classList.add('active'); render();}
-
 async function loadMatches(){
  document.getElementById('list').innerHTML='Loading...';
  let r=await fetch(`/api/matches?date=${curDate}`);
@@ -61,7 +57,6 @@ async function loadMatches(){
  allMatches=j.data?.matches||[];
  render();
 }
-
 function render(){
  let list=document.getElementById('list');
  let filtered=allMatches.filter(m=>{
@@ -69,35 +64,5 @@ function render(){
   if(filter==='live') return m.isLive;
   return true;
  });
- if(!filtered.length){list.innerHTML='No matches'; return;}
- list.innerHTML=filtered.map((m,i)=>{
-  let idx=allMatches.indexOf(m);
-  return `<div class="match" onclick="openMatch(${idx})">
-   <div class="team"><div class="country">${m.league.country} - ${m.league.name}</div><div>${m.home.name} vs ${m.away.name}</div></div>
-   <div class="score">${m.home.score} - ${m.away.score}</div>
-  </div>`;
- }).join('');
-}
-
-function openMatch(idx){
- let m=allMatches[idx];
- let ft = `${m.home.score} - ${m.away.score}`;
- let ht = (m.ht && m.ht.home!=null) ? `${m.ht.home} - ${m.ht.away}` : null;
- 
- document.getElementById('modalBox').innerHTML=`
-  <h3 style="margin-bottom:10px">${m.home.name} vs ${m.away.name}</h3>
-  <div style="color:#94a3b8;margin-bottom:15px">${m.league.country} - ${m.league.name}<br>${m.status}</div>
-  <div style="background:#0f172a;padding:15px;border-radius:10px">
-   <div style="color:#22c55e;font-size:22px;font-weight:bold;margin-bottom:10px">FT: ${ft}</div>
-   ${ht ? `<div style="color:orange;font-size:20px;font-weight:bold">HT: ${ht}</div>` : `<div style="color:#64748b">HT: No HT data for this league</div>`}
-  </div>
-  <div style="margin-top:15px;color:#94a3b8;font-size:12px">Click outside to close</div>
- `;
- document.getElementById('modal').style.display='flex';
-}
-function closeModal(){document.getElementById('modal').style.display='none';}
-
-loadDays(); loadMatches();
-</script>
-</body>
-</html>
+ if(!filtered.length){list.innerHTML='No matches for this filter'; return;}
+ list.innerHTML=filtered.map
