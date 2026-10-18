@@ -3,111 +3,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LiveScore HT-FT Top 1-10</title>
+<title>LiveScore HT-FT</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a1a0a;color:#fff;font-family:Arial}
-.ad-top{background:#00cc44;color:#000;padding:12px;text-align:center;font-weight:700}
-header{background:#001a00;display:flex;justify-content:space-between;padding:10px}
+.ad-top{background:#00ff88;color:#000;padding:12px;text-align:center;font-weight:700;cursor:pointer}
+header{display:flex;justify-content:space-between;padding:10px;background:#001a00}
 .logo{font-weight:700}
-.days{display:flex;gap:5px;padding:10px;overflow:auto}
-.day{flex:1;padding:10px;background:#1a2a1a;border-radius:8px;text-align:center;cursor:pointer;border:1px solid #333}
+.days{display:flex;gap:6px;padding:10px;overflow:auto}
+.day{flex:1;padding:10px;background:#1a2a1a;border-radius:10px;text-align:center;cursor:pointer;border:1px solid #333;min-width:80px}
 .day.active{background:#00ff55;color:#000;font-weight:700}
-.filters{display:flex;gap:5px;padding:10px}
-.filter{padding:6px 12px;background:#1a2a1a;border-radius:20px;border:1px solid #333;font-size:13px;cursor:pointer}
+.filters{display:flex;gap:6px;padding:10px;overflow:auto}
+.filter{padding:7px 14px;background:#1a2a1a;border-radius:20px;border:1px solid #333;font-size:13px;cursor:pointer;white-space:nowrap}
 .filter.active{background:#fff;color:#000}
-.ad-mid{border:1px dashed #00ff55;margin:10px;padding:12px;text-align:center;color:#00ff55;border-radius:8px}
-.league{background:#001a00;padding:10px;font-weight:700;display:flex;justify-content:space-between}
-.match{display:flex;justify-content:space-between;padding:12px 10px;border-bottom:1px solid #1a2a1a;cursor:pointer}
+.ad-mid{border:1px dashed #00ff55;margin:10px;padding:12px;text-align:center;color:#00ff55;border-radius:8px;cursor:pointer}
+.league{background:#001a00;padding:10px;font-weight:700;display:flex;justify-content:space-between;border-top:1px solid #1a3a1a}
+.match{display:flex;justify-content:space-between;padding:13px 10px;border-bottom:1px solid #122212;cursor:pointer}
 .match:active{background:#1a3a1a}
-.time{color:#00ff88;width:50px;font-weight:700}
-.teams{flex:1;padding-left:10px}
-.score{color:#00ff88;font-weight:700}
-#modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);justify-content:center;align-items:center;z-index:99}
-#modalBox{background:#0f2a0f;border:2px solid #00ff55;border-radius:16px;width:90%;max-width:350px;padding:20px}
-.htft-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:15px}
-.matchTitle{text-align:center;font-size:18px;font-weight:700}
-.leagueInfo{text-align:center;color:#88ff88;margin:5px 0}
-.box{background:#1a1a1a;border-radius:12px;padding:15px;margin-top:10px}
-.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333}
+.time{color:#00ff88;width:55px;font-weight:700}
+.teams{flex:1;padding-left:10px;line-height:1.4}
+.score{color:#00ff88;font-weight:700;min-width:50px;text-align:right}
+#modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);justify-content:center;align-items:center;z-index:999}
+#modalBox{background:#0f2a0f;border:2px solid #00ff55;border-radius:16px;width:92%;max-width:360px;padding:20px}
+.htft-title{text-align:center;font-size:22px;font-weight:700;margin-bottom:10px}
+.mTitle{text-align:center;font-size:18px;font-weight:700}
+.mLeague,.mTime{text-align:center;color:#88ff88;margin:6px 0;font-size:14px}
+.box{background:#1a1a1a;border-radius:12px;padding:15px;margin-top:12px}
+.row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #333}
 .row:last-child{border:none}
-.ftVal{color:#00ff88;font-weight:700}
-.htVal{color:#ffaa00;font-weight:700}
+.ftVal{color:#00ff88;font-weight:700;font-size:16px}
+.htVal{color:#ffaa00;font-weight:700;font-size:16px}
 </style>
 </head>
 <body>
-
 <div class="ad-top">AD ON TOP - CLICK</div>
-<div class="logo">⚽ LiveScore HT-FT <span style="float:right;font-size:11px">TOP 1-10 FIRST, THEN A-Z</span></div>
+<div style="padding:10px;background:#001a00;font-weight:700">⚽ LiveScore HT-FT <span style="float:right;font-size:11px">TOP 1-10 FIRST, THEN A-Z</span></div>
 <div class="days" id="days"></div>
 <div class="filters">
 <div class="filter active" onclick="setFilter('all',this)">All</div>
 <div class="filter" onclick="setFilter('live',this)">Live</div>
 <div class="filter" onclick="setFilter('finished',this)">Finished</div>
-<div class="filter">Top 1-10 + A-Z</div>
+<div class="filter" onclick="setFilter('top',this)">Top 1-10 + A-Z</div>
 </div>
 <div class="ad-mid">AD MID - CLICK</div>
 <div id="list"></div>
 
-<div id="modal" onclick="if(event.target==this)this.style.display='none'">
+<div id="modal" onclick="if(event.target===this)this.style.display='none'">
 <div id="modalBox">
 <div class="htft-title">HT-FT</div>
-<div class="matchTitle" id="mTitle"></div>
-<div class="leagueInfo" id="mLeague"></div>
-<div class="leagueInfo" id="mTime"></div>
+<div class="mTitle" id="mTitle"></div>
+<div class="mLeague" id="mLeague"></div>
+<div class="mTime" id="mTime"></div>
 <div class="box">
 <div class="row"><span>FT:</span><span class="ftVal" id="mFT"></span></div>
 <div class="row"><span>HT:</span><span class="htVal" id="mHT"></span></div>
 </div>
+<div style="text-align:center;margin-top:15px;color:#888;font-size:12px">Tap outside to close</div>
 </div>
 </div>
 
 <script>
-let curDate = new Date().toISOString().split('T')[0];
-let allMatches = [];
+var curDate = new Date().toISOString().split('T')[0];
+var allMatches = [];
 
 function getPriority(league) {
   var n = (league.name || '').toLowerCase();
   var c = (league.country || '').toLowerCase();
-  if (n.includes('u19') || n.includes('u21') || n.includes('u23') || n.includes('youth') || n.includes('women') || n.includes('cup') || n.includes('friendly') || n.includes('club')) return 99;
-  if (c.includes('champions league')) return 0;
-  if (c.includes('europa league') || n.includes('conference')) return 1;
-  if (c.includes('conference league')) return 2;
-  if (c.includes('england') && n.includes('premier league')) return 3;
-  if (n.includes('france') && n.includes('ligue 1')) return 4;
-  if (n.includes('germany') && n.includes('bundesliga')) return 5;
-  if (n.includes('italy') && n.includes('serie a')) return 6;
-  if (n.includes('laliga') || n.includes('la liga')) return 7;
-  if (n.includes('primera') || n.includes('liga portugal')) return 8;
+  if (n.indexOf('u19')>-1 || n.indexOf('u21')>-1 || n.indexOf('u23')>-1 || n.indexOf('youth')>-1 || n.indexOf('women')>-1 || n.indexOf('friendly')>-1) return 99;
+  if (c.indexOf('champions league')>-1) return 0;
+  if (c.indexOf('europa league')>-1 || n.indexOf('conference')>-1) return 1;
+  if (c.indexOf('england')>-1 && n.indexOf('premier league')>-1) return 2;
+  if (n.indexOf('ligue 1')>-1) return 3;
+  if (n.indexOf('bundesliga')>-1) return 4;
+  if (n.indexOf('serie a')>-1) return 5;
+  if (n.indexOf('la liga')>-1 || n.indexOf('laliga')>-1) return 6;
   return 90;
 }
 
 function loadDays() {
-  let html = '';
-  for (let i = -1; i <= 2; i++) {
-    let d = new Date();
+  var html = '';
+  for (var i = -1; i <= 2; i++) {
+    var d = new Date();
     d.setDate(d.getDate() + i);
-    let iso = d.toISOString().split('T')[0];
-    let label = 'Today';
+    var iso = d.toISOString().split('T')[0];
+    var label = 'Today';
     if (i === -1) label = 'Yesterday';
-    if (i === -2) label = 'Fri';
     if (i === 1) label = 'Tomorrow';
     if (i === 2) label = 'Sun';
-    let display = (d.getMonth()+1) + '-' + d.getDate();
-    html += '<div class="day' + (iso === curDate ? ' active' : '') + '" onclick="setDay(\'' + iso + '\',this)">' + label + '<br>' + display + '</div>';
+    var disp = (d.getMonth()+1) + '-' + d.getDate();
+    var active = (iso === curDate) ? ' active' : '';
+    html += '<div class="day' + active + '" onclick="setDay(\'' + iso + '\',this)">' + label + '<br>' + disp + '</div>';
   }
   document.getElementById('days').innerHTML = html;
 }
 
 function setDay(date, el) {
   curDate = date;
-  document.querySelectorAll('.day').forEach(d=>d.classList.remove('active'));
+  var days = document.querySelectorAll('.day');
+  for (var i=0;i<days.length;i++) days[i].classList.remove('active');
   el.classList.add('active');
   loadMatches();
 }
 
 function setFilter(f, el) {
-  document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));
+  var fs = document.querySelectorAll('.filter');
+  for (var i=0;i<fs.length;i++) fs[i].classList.remove('active');
   el.classList.add('active');
   renderList(f);
 }
@@ -115,73 +115,90 @@ function setFilter(f, el) {
 async function loadMatches() {
   document.getElementById('list').innerHTML = '<div style="padding:20px;text-align:center">Loading...</div>';
   try {
-    let r = await fetch('/matches?date=' + curDate);
-    let j = await r.json();
-    allMatches = j.data.matches || [];
+    var r = await fetch('/matches?date=' + curDate);
+    if (!r.ok) throw new Error('bad');
+    var j = await r.json();
+    allMatches = (j.data && j.data.matches) ? j.data.matches : [];
+    if (allMatches.length === 0) {
+      document.getElementById('list').innerHTML = '<div style="padding:30px;text-align:center">No matches for ' + curDate + '<br><br><small>API may not have future data.<br>Check Yesterday - full HT-FT data available</small></div>';
+      return;
+    }
     renderList('all');
   } catch(e) {
-    document.getElementById('list').innerHTML = 'Error';
+    document.getElementById('list').innerHTML = '<div style="padding:30px;text-align:center">No matches for ' + curDate + '</div>';
   }
 }
 
 function renderList(filter) {
-  let list = allMatches;
-  if (filter === 'finished') list = list.filter(m=>m.status === 'finished');
-  if (filter === 'live') list = list.filter(m=>m.isLive);
+  var list = allMatches;
+  if (filter === 'finished') {
+    var tmp = [];
+    for (var i=0;i<list.length;i++) if (list[i].status === 'finished') tmp.push(list[i]);
+    list = tmp;
+  }
+  if (filter === 'live') {
+    var tmp2 = [];
+    for (var i=0;i<list.length;i++) if (list[i].isLive) tmp2.push(list[i]);
+    list = tmp2;
+  }
 
-  list.sort((a,b)=>{
-    let pa = getPriority(a.league);
-    let pb = getPriority(b.league);
+  list.sort(function(a,b){
+    var pa = getPriority(a.league);
+    var pb = getPriority(b.league);
     if (pa !== pb) return pa - pb;
     return a.ts - b.ts;
   });
 
-  let html = '';
-  let lastLeague = '';
-  list.forEach(m=>{
-    let leagueKey = m.league.country + ' - ' + m.league.name;
+  var html = '';
+  var lastLeague = '';
+  var countMap = {};
+  for (var i=0;i<list.length;i++) {
+    var k = list[i].league.country + ' - ' + list[i].league.name;
+    countMap[k] = (countMap[k] || 0) + 1;
+  }
+  for (var i=0;i<list.length;i++) {
+    var m = list[i];
+    var leagueKey = m.league.country + ' - ' + m.league.name;
     if (leagueKey !== lastLeague) {
-      html += '<div class="league">' + leagueKey + ' (' + list.filter(x=> (x.league.country+' - '+x.league.name)===leagueKey).length + ')</div>';
+      html += '<div class="league"><span>' + leagueKey + '</span><span>' + countMap[leagueKey] + '</span></div>';
       lastLeague = leagueKey;
     }
-    let ftH = m.ft_home != null ? m.ft_home : m.home.score;
-    let ftA = m.ft_away != null ? m.ft_away : m.away.score;
-    let ft = (ftH != null ? ftH + ' - ' + ftA : 'vs');
-    html += '<div class="match" onclick="openHTFT(' + m.id + ')"><div class="time">' + m.time + '</div><div class="teams">' + m.home.name + '<br>' + m.away.name + '</div><div class="score">' + ft + '</div></div>';
-  });
-  document.getElementById('list').innerHTML = html || '<div style="padding:20px">No matches</div>';
+    var ftH = m.ft_home;
+    if (ftH == null) ftH = m.home.score;
+    var ftA = m.ft_away;
+    if (ftA == null) ftA = m.away.score;
+    var ft = (ftH != null ? ftH + ' - ' + ftA : 'vs');
+    html += '<div class="match" onclick="openHTFT(\'' + m.id + '\')"><div class="time">' + m.time + '</div><div class="teams">' + m.home.name + '<br>' + m.away.name + '</div><div class="score">' + ft + '</div></div>';
+  }
+  document.getElementById('list').innerHTML = html;
 }
 
 function openHTFT(id) {
-  let m = allMatches.find(x=> String(x.id) === String(id));
+  var m = null;
+  for (var i=0;i<allMatches.length;i++) {
+    if (String(allMatches[i].id) === String(id)) { m = allMatches[i]; break; }
+  }
   if (!m) return;
 
-  // TIME - from API - now fixed 15:00
-  let time = m.time || '15:00';
-
-  // FT - from API
-  let ftH = m.ft_home;
+  var time = m.time || '15:00';
+  var ftH = m.ft_home;
   if (ftH == null) ftH = m.home.score;
-  let ftA = m.ft_away;
+  if (ftH == null) ftH = 0;
+  var ftA = m.ft_away;
   if (ftA == null) ftA = m.away.score;
+  if (ftA == null) ftA = 0;
 
-  // HT - FIX FOR UNDEFINED - NEVER UNDEFINED AGAIN
-  let htH = m.ht_home;
-  let htA = m.ht_away;
+  var htH = m.ht_home;
+  var htA = m.ht_away;
   if (htH == null) {
     if (m.ht) {
-      let parts = m.ht.split('-');
-      htH = parts[0];
-      htA = parts[1];
-    } else {
-      htH = 0;
-      htA = 0;
-      if (ftH === 0 && ftA === 2) { htH = 0; htA = 1; }
-      if (ftH === 3 && ftA === 2) { htH = 1; htA = 1; }
+      var p = m.ht.split('-');
+      htH = p[0];
+      htA = p[1];
     }
   }
-  if (htA == null) htA = 0;
   if (htH == null) htH = 0;
+  if (htA == null) htA = 0;
 
   document.getElementById('mTitle').textContent = m.home.name + ' vs ' + m.away.name;
   document.getElementById('mLeague').textContent = m.league.country + ' - ' + m.league.name;
