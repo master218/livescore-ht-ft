@@ -2,41 +2,38 @@ export async function onRequestGet(c){
 const key=c.env.FOOTBALL_API_KEY;
 let date=new URL(c.request.url).searchParams.get('date')||"2026-10-17";
 try{
-let r=await fetch(`https://live-football-api.com/api/v1/matches?date=${date}&language=en&timezone=Europe/Paris`,{headers:{"X-API-Key":key}});
+let r=await fetch(`https://live-football-api.com/api/v1/matches?date=${date}&language=en`,{headers:{"X-API-Key":key}});
 let j=await r.json();
 let list=j.data?.matches||[];
 
 let out=list.map((m,i)=>{
-// FIX 1: TIME - you were not returning time at all! Frontend showed NS/--:--
-let timeVal = m.time || m.kickoff || m.start || m.datetime || "";
-if(m.date && m.time && m.time.includes(":")){
-  // Combine date + time to full ISO with France offset
-  timeVal = `${m.date}T${m.time}:00+02:00`;
-}
-if(m.fixture?.date) timeVal = m.fixture.date;
-if(m.fixture?.timestamp) timeVal = m.fixture.timestamp;
-if(m.kickoff_utc) timeVal = m.kickoff_utc;
+let isFinished=m.status?.status==="finished"||m.status?.state==="postGame"||m.status?.status==="FT";
+let isLive=m.status?.is_live||false;
 
-// FIX 2: COUNTRY - you had || "World" - that's why TOP badge broke
-let country = m.league?.country || m.country || "Other";
-if(country==="World" || country==="world") country = m.league?.name?.includes("Premier") ? "England" : (m.league?.name?.includes("Ligue 1") ? "France" : "Other");
+// SAME TIME AS FLASHSCORE - NO +02:00
+let timeVal = m.time || "";
+let country = m.league?.country || "Other";
 let leagueName = m.league?.name || "League";
-
-// FIX 3: STATUS - you set || "FT" so all games looked finished
-let isFinished = m.status?.status==="finished" || m.status?.state==="postGame" || m.status?.status==="FT" || m.status==="finished";
-let isLive = m.status?.is_live || m.status?.isLive || false;
-let statusStr = isFinished ? "finished" : (isLive ? "live" : "scheduled");
+if(country==="World"){
+  if(leagueName.includes("Premier")) country="England";
+  else if(leagueName.includes("Ligue 1")) country="France";
+  else if(leagueName.includes("Bundesliga")) country="Germany";
+  else if(leagueName.includes("Serie A")) country="Italy";
+  else if(leagueName.includes("LaLiga")||leagueName.includes("La Liga")) country="Spain";
+  else if(leagueName.includes("Eredivisie")) country="Netherlands";
+  else if(leagueName.includes("Primeira")||leagueName.includes("Liga Portugal")) country="Portugal";
+  else if(leagueName.toLowerCase().includes("champions league")) country="Europe";
+  else if(leagueName.toLowerCase().includes("europa")) country="Europe";
+}
 
 return{
 id:m.id||i,
-// THIS FIXES FRANCE TIME
 time: timeVal,
-timestamp: m.timestamp || m.fixture?.timestamp || null,
 home:{name:m.home?.name||"Home",score:m.home?.score ?? null},
 away:{name:m.away?.name||"Away",score:m.away?.score ?? null},
 ht:(m.halftime&&m.halftime.home!==null)?{home:m.halftime.home,away:m.halftime.away}:null,
 league:{country:country,name:leagueName},
-status:statusStr,
+status:isFinished?"finished":(isLive?"live":"scheduled"),
 isLive:isLive
 };
 });
