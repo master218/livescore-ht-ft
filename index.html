@@ -1,1 +1,106 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Livescore - Clean Football Scores</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a1a0a;color:#fff;font-family:system-ui,sans-serif}
+.top{background:#00c853;color:#000;text-align:center;padding:10px;font-weight:800}
+.verse{background:#1a2e1a;border-left:4px solid #00e676;margin:10px;padding:12px;border-radius:8px}
+.verse b{color:#00e676}
+.filters{display:flex;gap:8px;padding:10px;overflow:auto}
+.filters button{background:#1a2e1a;color:#fff;border:1px solid #2a4a2a;padding:8px 16px;border-radius:20px;cursor:pointer}
+.filters button.active,.filters button:hover{background:#00c853;color:#000}
+.match{background:#121212;margin:8px 10px;padding:12px;border-radius:10px;border:1px solid #1e1e1e}
+.match-live{border-color:#00e676}
+.ad-box{background:#fff;color:#000;text-align:center;padding:20px;margin:10px;border-radius:10px}
+.footer{text-align:center;padding:20px;color:#888;font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<a href="https://your-clean-ad-link.com" target="_blank" style="text-decoration:none">
+<div class="top">⚽ LIVESCORE - SUPPORTED BY CLEAN ADS</div>
+</a>
+
+<div class="verse" id="verse">Loading verse...</div>
+
+<div class="filters">
+<button class="active" onclick="loadGames('all')">All</button>
+<button onclick="loadGames('live')">Live</button>
+<button onclick="loadGames('finished')">Finished</button>
+<button onclick="showStandings()">Table</button>
+</div>
+
+<div id="list"></div>
+<div id="standings" style="display:none;padding:10px"></div>
+
+<!-- CLEAN AD SPOT - Put AdSense code here later -->
+<div class="ad-box">
+CLEAN AD SPACE - Replace with Google AdSense / Adsterra (Uncheck Gambling category)
+</div>
+
+<div class="footer">
+Enjoy football responsibly 🙏<br>
+Scores are for information only.<br>
+"For where your treasure is, there your heart will be also" - Matthew 6:21<br><br>
+18+ | This site does not encourage betting
+</div>
+
+<script>
+const verses=[
+"Isaiah 40:29 - He gives strength to the weary.",
+"Philippians 4:13 - I can do all things through Christ who strengthens me.",
+"Psalm 28:7 - The Lord is my strength and my shield.",
+"Colossians 3:23 - Whatever you do, work at it with all your heart.",
+"1 Corinthians 9:24 - Run in such a way as to get the prize.",
+"Proverbs 16:3 - Commit to the Lord whatever you do."
+];
+document.getElementById('verse').innerHTML='<b>📖 Verse of the Day:</b> '+verses[new Date().getDate() % verses.length];
+
+async function loadGames(filter){
+  document.getElementById('list').style.display='block';
+  document.getElementById('standings').style.display='none';
+  const list=document.getElementById('list');
+  list.innerHTML='Loading matches...';
+  try{
+    const today=new Date().toISOString().split('T')[0];
+    const res=await fetch('/api?date='+today);
+    const matches=await res.json();
+    if(!matches.length){ list.innerHTML='<p style="text-align:center;padding:20px">No games today - Check Table</p>'; return; }
+    let html='';
+    matches.forEach(m=>{
+      if(filter==='live' && !String(m.status||'').toLowerCase().includes('live')) return;
+      if(filter==='finished' && !String(m.status||'').toLowerCase().includes('ft')) return;
+      html+=`<div class="match ${String(m.status||'').toLowerCase().includes('live')?'match-live':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-weight:bold">${m.home||m.home_team||'Home'}</div><div style="font-weight:bold">${m.away||m.away_team||'Away'}</div></div>
+        <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:#00e676">${m.score||m.goals||'-'}</div><div style="font-size:11px;background:#00e676;color:#000;padding:2px 6px;border-radius:10px">${m.status||''}</div></div>
+      </div></div>`;
+    });
+    list.innerHTML=html||'<p style="text-align:center">No matches for this filter</p>';
+  }catch(e){ list.innerHTML='Error: '+e.message; }
+}
+loadGames('all');
+
+async function showStandings(){
+  document.getElementById('list').style.display='none';
+  var s=document.getElementById('standings');
+  s.style.display='block';
+  s.innerHTML='Loading table... <br><small>Make sure you created /functions/standings/index.js</small>';
+  try{
+    var res=await fetch('/standings?league=47');
+    var data=await res.json();
+    var teams=data.standings||data.data||data;
+    if(!Array.isArray(teams)){ s.innerHTML='<pre>'+JSON.stringify(data).slice(0,500)+'</pre>'; return; }
+    var html='<table style="width:100%;border-collapse:collapse"><tr style="background:#102010"><th>#</th><th>Team</th><th>P</th><th>Pts</th></tr>';
+    teams.forEach((t,i)=>{ html+=`<tr style="border-bottom:1px solid #1a2e1a"><td>${t.position||t.rank||i+1}</td><td>${t.team_name||t.name}</td><td>${t.played||0}</td><td style="color:#00e676;font-weight:bold">${t.points||0}</td></tr>`; });
+    s.innerHTML=html+'</table>';
+  }catch(e){ s.innerHTML='Add standings API first. See previous message.'; }
+}
+</script>
+</body>
+</html>
